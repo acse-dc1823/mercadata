@@ -68,7 +68,6 @@ with st.sidebar:
     st.subheader("Sobre la Aplicación")
     st.write('''
         - Esta aplicación pretende analizar los patrones de gasto en diferentes categorías y a lo largo del tiempo.
-        - Beta Testing de [Izan](https://www.tiktok.com/@quarto.es/video/7402546595943730464), en desarrollo. ¡Se aceptan sugerencias!
     ''')
 
 # Verificar si el archivo CSV existe y no está vacío
@@ -108,26 +107,31 @@ if os.path.exists(csv_path):
                 st.metric(label="Número de Compras en el Mes Seleccionado", value=filtered_data_by_month['identificativo de ticket'].nunique())
                 st.metric(label="Categoría con Mayor Gasto en el Mes Seleccionado", value=filtered_data_by_month.groupby("categoría")["precio"].sum().idxmax())
 
-            # Crear una sola fila con los gráficos principales
-            col1, col2, col3 = st.columns(3)
-
+            # Crear una sola fila con el gráfico de distribución del gasto por categoría (Pie Chart)
+            st.subheader("Distribución del Gasto")
+            col1 = st.columns(1)[0]
             with col1:
                 # Distribución del Gasto por Categoría
                 total_price_per_category = data.groupby("categoría")["precio"].sum().reset_index()
                 fig_pie = px.pie(total_price_per_category, values='precio', names='categoría', title='Distribución del Gasto por Categoría')
                 st.plotly_chart(fig_pie)
 
-            with col2:
+            # Crear una segunda fila con los gráficos de gasto total por mes y precio medio por categoría
+            st.subheader("Análisis de Gasto por Tiempo y Categoría")
+            col1, col2 = st.columns(2)
+
+            with col1:
                 # Gasto Total por Mes
                 monthly_expense = data["precio"].resample('M').sum().reset_index()
                 fig_bar = px.bar(monthly_expense, x='fecha', y='precio', labels={'fecha': 'Mes', 'precio': 'Gasto (€)'})
                 st.plotly_chart(fig_bar)
 
-            with col3:
+            with col2:
                 # Precio Medio por Categoría
                 avg_price_per_category = data.groupby("categoría")["precio"].mean().reset_index().sort_values(by="precio", ascending=False)
                 fig_bar_avg = px.bar(avg_price_per_category, x='categoría', y='precio', labels={'precio': 'Precio Medio (€)'})
                 st.plotly_chart(fig_bar_avg)
+
 
             # Análisis del Gasto en el Tiempo y Top 10 Items
             col1, col2 = st.columns(2)
