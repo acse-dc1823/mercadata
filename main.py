@@ -100,7 +100,7 @@ if os.path.exists(csv_path):
             with col2:
                 st.metric(label="Categoría con Mayor Gasto", value=category_with_highest_spent)
                 st.metric(label="Gasto Promedio Mensual", value=f"€{avg_spent_per_month:.2f}")
-                st.metric(label="Tickets por Mes", value=f"{total_tickets_per_month:.2f}")
+                st.metric(label="Items por Mes", value=f"{total_tickets_per_month:.2f}")
 
             with col3:
                 st.metric(label="Total Gastado en el Mes Seleccionado", value=f"€{filtered_data_by_month['precio'].sum():.2f}")
@@ -137,15 +137,24 @@ if os.path.exists(csv_path):
             col1, col2 = st.columns(2)
 
             with col1:
-                # Análisis del Gasto en el Tiempo
-                daily_expense = data["precio"].resample('D').sum().reset_index()
-                fig_line = px.line(daily_expense, x='fecha', y='precio', labels={'fecha': 'Fecha', 'precio': 'Gasto (€)'})
-                st.plotly_chart(fig_line)
+                # Gasto Total por Semana
+                weekly_expense = data["precio"].resample('W').sum().reset_index()  # Resample to weekly
+                fig_weekly_bar = px.bar(
+                    weekly_expense,
+                    x='fecha',
+                    y='precio',
+                    labels={'fecha': 'Semana', 'precio': 'Gasto (€)'},
+                    title='Gasto Total por Semana'
+                )
+                fig_weekly_bar.update_layout(xaxis_title='Semana', yaxis_title='Gasto (€)')
+                st.plotly_chart(fig_weekly_bar)
+
 
             with col2:
                 # Top 10 Items con Mayor Gasto
                 top_items = data.groupby('item')['precio'].sum().nlargest(10).reset_index()
-                fig_top_items = px.bar(top_items, x='item', y='precio', labels={'item': 'Item', 'precio': 'Gasto (€)'})
+                fig_top_items = px.bar(top_items, x='item', y='precio', labels={'item': 'Item', 'precio': 'Gasto (€)'},
+                                       title='Top 10 Items con Mayor Gasto')
                 st.plotly_chart(fig_top_items)
 
             # Datos Filtrados
@@ -161,12 +170,46 @@ if os.path.exists(csv_path):
 
             # Heatmap del gasto por día y hora
             st.subheader("Heatmap del Gasto por Día y Hora")
+            # Ensure 'hour_of_day' is limited to the opening hours (9 to 23)
             data['day_of_week'] = data.index.dayofweek
             data['hour_of_day'] = data.index.hour
-            heatmap_data = data.pivot_table(values='precio', index='hour_of_day', columns='day_of_week', aggfunc='sum', fill_value=0)
-            fig_heatmap = go.Figure(data=go.Heatmap(z=heatmap_data.values, x=['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'], y=list(range(24)), colorscale='Viridis'))
-            fig_heatmap.update_layout(xaxis_title='Día de la Semana', yaxis_title='Hora del Día')
+
+            # Filter data for hours between 9 and 23
+            data_filtered = data[(data['hour_of_day'] >= 9) & (data['hour_of_day'] <= 22)]
+
+            # Create a range of hours from 9 to 23 and days of the week
+            hours = list(range(9, 23))
+            days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+            # Create the pivot table with the filtered data
+            heatmap_data = data_filtered.pivot_table(
+                values='precio',
+                index='hour_of_day',
+                columns='day_of_week',
+                aggfunc='sum',
+                fill_value=0
+            ).reindex(index=hours, columns=range(7), fill_value=0)  # Ensure full range of hours and days
+
+            # Create the heatmap
+            fig_heatmap = go.Figure(
+                data=go.Heatmap(
+                    z=heatmap_data.values,
+                    x=days,  # Day names
+                    y=hours,  # Limited to 9-23
+                    colorscale='Viridis'
+                )
+            )
+
+            # Update layout
+            fig_heatmap.update_layout(
+                xaxis_title='Día de la Semana',
+                yaxis_title='Hora del Día',
+                yaxis=dict(dtick=1)  # Ensure ticks for every hour
+            )
+
+            # Display the heatmap
             st.plotly_chart(fig_heatmap)
+
 
         else:
             st.warning("El archivo CSV está vacío. Por favor, asegúrate de que `process_data.py` haya generado datos correctamente.")
