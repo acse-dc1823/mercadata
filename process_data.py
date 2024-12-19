@@ -15,19 +15,19 @@ CATEGORY_KEYWORDS = {
                "aguacate", "piña", "coco", "papaya", "granada", "higo", "guayaba", "mora"],
     "lácteos": ["leche", "yogur", "queso", "mantequilla", "crema", "nata", "kefir", "kéfir", "feta",
                 "mozzarella", "parmesano", "burrata", "cheddar", "gouda", "provolone", "ricotta",
-                "rulo precortado", "griego", "tiramisu", "curado cortado"],
+                "rulo precortado", "griego", "tiramisu", "curado cortado", "rulo cabra"],
     "carnes": ["pollo", "res", "cerdo", "jamon", "jamón", "salchicha", "mortadela", "chorizo",
                "huevo", "pechuga", "chuleta", "conejo", "pavo", "ternera", "butifarra", "longaniza",
                "cecina", "salami", "lomo", "tocino", "salchichón", "cecina", "fuet", "sobrasada",
-               "cordero", "bacon", "serrano", "embutido"],
-    "pescado": ["salmón", "atun", "bacalao", "merluza", "lubina", "sardina", "pulpo", "calamar",
-                "gamba", "rodaballo", "boquerones", "anchoas"],
+               "cordero", "bacon", "serrano", "embutido", "salchichon"],
+    "pescado": ["salmón", "atun", "atún", "bacalao", "merluza", "lubina", "sardina", "pulpo", "calamar",
+                "gamba", "rodaballo", "boquerones", "anchoas", "pescado"],
     "bebidas": ["agua", "jugo", "refresco", "vino", "cerveza", "café", "coca cola",
                 "aquarius", "ladron de manzanas", "fanta", "sprite", "tonica", "red bull",
                 "monster", "pepsi", "ambar", "mahou", "estrella galicia", "alhambra", "corona",
-                "heineken", "estrella damm", "cafe", "chai"],
+                "heineken", "estrella damm", "cafe", "chai", "ron", "whisky", "gin", "vodka",],
     "panadería": ["pan", "bollos", "baguette", "croissant", "brioche", "panecillo", "panettone",
-                  "chapata"],
+                  "chapata", "hojaldre"],
     "granos y cereales": ["pasta", "arroz", "lenteja", "quinoa", "cuscus", "harina", "avena",
                           "maiz", "garbanzos", "trigo", "cereal", "alubias", "penne",
                           "tortiglioni", "medialuna", "canelones", "tortillas", "spaghetti",
@@ -128,7 +128,7 @@ def process_pdfs(uploaded_files):
                     line = lines[idx].strip()
 
                     # Stop processing when reaching totals or other non-item sections
-                    if re.search(r'TOTAL|IVA|TARJETA|IMPORTE', line, re.IGNORECASE):
+                    if re.search(r'\b(TOTAL|IVA|TARJETA|IMPORTE)\b', line, re.IGNORECASE):
                         break
 
                     # Check if the line starts with a quantity (e.g., "1 ", "2 ")
@@ -192,6 +192,7 @@ def process_pdfs(uploaded_files):
         # Create a DataFrame and save it locally as CSV
         df = pd.DataFrame(data, columns=["fecha", "identificativo de ticket", "ubicación", "item", "categoría", "precio"])
         print(df)
+        print(df.loc[df["categoría"] == "Otros"])
         df.to_csv(output_csv, index=False)
         st.success(f"Archivo CSV generado con éxito: {output_csv}")
     else:
